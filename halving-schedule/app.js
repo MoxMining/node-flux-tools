@@ -72,7 +72,7 @@ function generateSchedule(currentHeight) {
         reward *= 0.9;
 
         events.push({
-            name: halving + "th Halving (−10%)",
+            name: halving + "th Reduction (−10%)",
             block: halvingBlock,
             reward: reward
         });
@@ -161,7 +161,7 @@ async function init() {
     const progress = Math.min((currentHeight / 6000000) * 100, 100);
     document.getElementById("progressFill").style.width = progress + "%";
     document.getElementById("progressText").innerText =
-        progress.toFixed(2) + "% of current halving schedule completed";
+        progress.toFixed(2) + "% of current reduction schedule completed";
 
     // countdown already running; no need to restart it repeatedly
 }
