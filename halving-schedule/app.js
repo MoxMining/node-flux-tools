@@ -158,10 +158,28 @@ async function init() {
         table.appendChild(row);
     }
 
-    const progress = Math.min((currentHeight / 6000000) * 100, 100);
+    // Find the previous and next events to calculate progress within current cycle
+    let previousEvent = events[0];
+    let nextEvent = null;
+    
+    for (let event of events) {
+        if (event.block <= currentHeight) {
+            previousEvent = event;
+        } else if (event.block > currentHeight && !nextEvent) {
+            nextEvent = event;
+            break;
+        }
+    }
+    
+    const cycleStart = previousEvent.block;
+    const cycleEnd = nextEvent.block;
+    const blocksInCycle = cycleEnd - cycleStart;
+    const blocksPassed = currentHeight - cycleStart;
+    const progress = Math.min((blocksPassed / blocksInCycle) * 100, 100);
+    
     document.getElementById("progressFill").style.width = progress + "%";
     document.getElementById("progressText").innerText =
-        progress.toFixed(2) + "% of current reduction schedule completed";
+        progress.toFixed(2) + "% progress to " + nextEvent.name;
 
     // countdown already running; no need to restart it repeatedly
 }
