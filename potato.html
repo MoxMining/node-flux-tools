@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Flux Potato Block Countdown</title>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 40px;
+        }
+
+        h1 {
+            color: #22c55e;
+        }
+
+        .box {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 20px;
+            min-width: 350px;
+        }
+
+        #countdown {
+            font-size: 1.5em;
+            margin-top: 10px;
+            color: #22c55e;
+        }
+
+        #timeRemaining {
+            margin-top: 20px;
+            font-size: 1.3em;
+        }
+
+        .bigTime {
+            font-size: 2em;
+            font-weight: bold;
+            color: #22c55e;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🥔 Flux Potato Block Countdown</h1>
+
+<div class="box">
+    <p>Current Block: <span id="currentBlock">Loading...</span></p>
+    <p>Next Potato Block: <span id="nextPotato">Loading...</span></p>
+    <div id="countdown">Loading...</div>
+
+    <div id="timeRemaining">
+        <div class="bigTime" id="timeText">Loading...</div>
+    </div>
+</div>
+
+<script>
+
+const POTATO_INTERVAL = 25920;
+const BLOCK_TIME_SECONDS = 30;
+
+let remainingBlocks = 0;
+
+async function fetchBlockHeight() {
+    try {
+        const response = await fetch("https://api.runonflux.io/daemon/getblockchaininfo");
+        const data = await response.json();
+
+        const currentBlock = data.data.blocks;
+        document.getElementById("currentBlock").innerText = currentBlock;
+
+        const nextPotato =
+            currentBlock + POTATO_INTERVAL -
+            (currentBlock % POTATO_INTERVAL);
+
+        document.getElementById("nextPotato").innerText = nextPotato;
+
+        remainingBlocks = nextPotato - currentBlock;
+
+        document.getElementById("countdown").innerText =
+            remainingBlocks + " blocks remaining";
+
+        updateTimeDisplay();
+
+    } catch (error) {
+        document.getElementById("countdown").innerText =
+            "Error fetching block data";
+    }
+}
+
+function updateTimeDisplay() {
+
+    let totalSeconds = remainingBlocks * BLOCK_TIME_SECONDS;
+
+    const days = Math.floor(totalSeconds / 86400);
+    totalSeconds %= 86400;
+
+    const hours = Math.floor(totalSeconds / 3600);
+    totalSeconds %= 3600;
+
+    const minutes = Math.floor(totalSeconds / 60);
+
+    document.getElementById("timeText").innerText =
+        `${days} days, ${hours} hours, ${minutes} minutes`;
+}
+
+fetchBlockHeight();
+setInterval(fetchBlockHeight, 30000);
+
+</script>
+
+</body>
+</html>
