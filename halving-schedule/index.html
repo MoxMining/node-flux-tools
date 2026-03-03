@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FLUX Halving Schedule</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>FLUX Halving Schedule</h1>
+
+    <div class="card">
+        <p id="timezoneInfo"></p>
+        <p>Current Block: <span id="currentHeight">Loading...</span></p>
+        <p>Current Reward: <span id="currentReward">-</span></p>
+        <p>Next Halving In:</p>
+        <h2 id="countdown">Loading...</h2>
+    </div>
+
+  
+    <div class="card">
+        <h2>Halving Progress</h2>
+        <div class="progress-bar">
+            <div id="progressFill"></div>
+        </div>
+        <p id="progressText"></p>
+    </div>
+
+    <div class="card">
+        <h2>Halving Schedule</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Block</th>
+                    <th>Estimated Date</th>
+                    <th>Reward After</th>
+                </tr>
+            </thead>
+            <tbody id="scheduleTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
