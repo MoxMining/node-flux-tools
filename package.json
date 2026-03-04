@@ -1,14 +1,24 @@
 {
-  "name": "flux-potato-countdown",
+  "name": "flux-tools",
   "version": "1.0.0",
   "description": "Flux Node Dashboard and Potato Block Countdown",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MoxMining/node-flux-tools.git"
+  },
+  "keywords": [],
   "author": "",
   "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MoxMining/node-flux-tools/issues"
+  },
+  "homepage": "https://github.com/MoxMining/node-flux-tools#readme",
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^5.2.1"
   }
 }
