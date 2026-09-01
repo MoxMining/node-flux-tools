@@ -1,3 +1,5 @@
+const API_URL = "https://explorer.runonflux.io/api/status";
+
 const BLOCK_TIME_SECONDS = 30;
 
 // --- Halvingskonstanter ---
