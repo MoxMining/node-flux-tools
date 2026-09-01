@@ -68,25 +68,23 @@ function generateSchedule(currentHeight) {
 
         baseReward *= 0.9;
 
-        // Legg til 10% reduksjons-event
+        const paActive = halvingBlock < PA_DEPLETION;
+
+        // 10% reduksjons-event — PA er aktiv dersom halvingBlock < PA_DEPLETION
         events.push({
             name: halving + "th Reduction (−10%)",
             block: halvingBlock,
-            reward: baseReward * 2,  // Base + PA = 2 * base
-            baseOnly: false
+            reward: paActive ? baseReward * 2 : baseReward,  // Base + PA, or base only
+            baseOnly: !paActive
         });
 
         // PA depletion: legg til event som viser at PA stopper
-        // Men påvirker IKKE base reward
         if (halvingBlock < PA_DEPLETION &&
             PA_DEPLETION < halvingBlock + HALVING_INTERVAL) {
-
-            // Ved PA depletion: base fortsetter uendret
-            // Total = base + 0 = base (IKKE base * 2)
             events.push({
                 name: "PA Depletion (PA ends)",
                 block: PA_DEPLETION,
-                reward: baseReward,  // Kun base, ingen PA
+                reward: baseReward,
                 baseOnly: true
             });
         }
