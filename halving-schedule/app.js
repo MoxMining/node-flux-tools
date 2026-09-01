@@ -5,7 +5,7 @@ const BLOCK_TIME_SECONDS = 30;
 // --- Halvingskonstanter ---
 const THIRD_START = 2020000;
 const FOURTH_HALVING = 3071200;  // Første 10% reduksjon (2,020,000 + 1,051,200)
-const PA_DEPLETION = 2040000;     // 20 000 blokker etter 2,020,000
+const PA_DEPLETION = 3466630;     // PA depletion ved blokk 3.466.630
 const HALVING_INTERVAL = 1051200; // 1 år med 30-sekunders blokker
 const INITIAL_REWARD = 14;        // 14 Flux base per block
 
