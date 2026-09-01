@@ -1,13 +1,11 @@
-const API_URL = "https://explorer.runonflux.io/api/status";
-
 const BLOCK_TIME_SECONDS = 30;
 
+// --- Halvingskonstanter ---
 const THIRD_START = 2020000;
-const FOURTH_HALVING = 3071200;
-const PA_DEPLETION = 3466630;
-const HALVING_INTERVAL = 1051200;
-
-const INITIAL_REWARD = 14;
+const FOURTH_HALVING = 3071200;  // Første 10% reduksjon (2,020,000 + 1,051,200)
+const PA_DEPLETION = 2040000;     // 20 000 blokker etter 2,020,000
+const HALVING_INTERVAL = 1051200; // 1 år med 30-sekunders blokker
+const INITIAL_REWARD = 14;        // 14 Flux base per block
 
 let nextReductionTime = null;
 
@@ -35,57 +33,59 @@ function estimateDate(currentHeight, targetBlock) {
 }
 
 function calculateCurrentReward(currentHeight) {
-
-    let reward = INITIAL_REWARD;
+    // Beregn base reward (uten PA)
+    let baseReward = INITIAL_REWARD;
     let halvingBlock = FOURTH_HALVING;
-
+    
     while (halvingBlock <= currentHeight) {
-
-        reward *= 0.9;
-
-        if (halvingBlock < PA_DEPLETION &&
-            PA_DEPLETION <= halvingBlock + HALVING_INTERVAL &&
-            currentHeight >= PA_DEPLETION) {
-            reward *= 0.5;
-        }
-
+        baseReward *= 0.9;
         halvingBlock += HALVING_INTERVAL;
     }
-
-    return reward;
+    
+    // PA legsgiver samme beløp som base reward så lenge det er aktivt
+    // Før PA depletion: total = base + base = 2 * base
+    // Etter PA depletion: total = base (PA = 0)
+    const paActive = currentHeight < PA_DEPLETION;
+    return paActive ? baseReward * 2 : baseReward;
 }
 
 function generateSchedule(currentHeight) {
 
     const events = [];
-    let reward = INITIAL_REWARD;
+    let baseReward = INITIAL_REWARD;
     let halvingBlock = FOURTH_HALVING;
 
     events.push({
-        name: "3rd Period Start",
+        name: "3rd Period Start (PoUW v.2)",
         block: THIRD_START,
-        reward: reward
+        reward: baseReward * 2,  // Base + PA = 28 FLUX
+        baseOnly: false
     });
 
     for (let halving = 4; halving <= 12; halving++) {
 
-        reward *= 0.9;
+        baseReward *= 0.9;
 
+        // Legg til 10% reduksjons-event
         events.push({
             name: halving + "th Reduction (−10%)",
             block: halvingBlock,
-            reward: reward
+            reward: baseReward * 2,  // Base + PA = 2 * base
+            baseOnly: false
         });
 
+        // PA depletion: legg til event som viser at PA stopper
+        // Men påvirker IKKE base reward
         if (halvingBlock < PA_DEPLETION &&
             PA_DEPLETION < halvingBlock + HALVING_INTERVAL) {
 
-            reward *= 0.5;
-
+            // Ved PA depletion: base fortsetter uendret
+            // Total = base + 0 = base (IKKE base * 2)
             events.push({
-                name: "PA Depletion (−50%)",
+                name: "PA Depletion (PA ends)",
                 block: PA_DEPLETION,
-                reward: reward
+                reward: baseReward,  // Kun base, ingen PA
+                baseOnly: true
             });
         }
 
