@@ -77,6 +77,7 @@ function calculatePADepletionBlock() {
     
     return {
         depletionBlock,
+        period1Blocks,           // LEGG TIL: Dette mangler i return!
         remainingAfterPeriod1,
         period1PAUsed,
         period2Blocks: blocksUntilDepletion,
