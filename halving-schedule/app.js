@@ -255,15 +255,28 @@ async function init() {
         }
     }
     
-    const cycleStart = previousEvent.block;
-    const cycleEnd = nextEvent.block;
-    const blocksInCycle = cycleEnd - cycleStart;
-    const blocksPassed = currentHeight - cycleStart;
-    const progress = Math.min((blocksPassed / blocksInCycle) * 100, 100);
+    // Debug logging
+    console.log("previousEvent:", previousEvent.name, "block:", previousEvent.block);
+    console.log("nextEvent:", nextEvent ? nextEvent.name : "null", "block:", nextEvent ? nextEvent.block : "null");
     
-    document.getElementById("progressFill").style.width = progress + "%";
-    document.getElementById("progressText").innerText =
-        progress.toFixed(2) + "% progress to " + nextEvent.name;
+    if (nextEvent && nextEvent.block !== previousEvent.block) {
+        const cycleStart = previousEvent.block;
+        const cycleEnd = nextEvent.block;
+        const blocksInCycle = cycleEnd - cycleStart;
+        const blocksPassed = currentHeight - cycleStart;
+        const progress = Math.min((blocksPassed / blocksInCycle) * 100, 100);
+        
+        console.log("Progress calculation:", progress.toFixed(2), "% (blocks passed:", blocksPassed, "/ blocks in cycle:", blocksInCycle + ")");
+        
+        document.getElementById("progressFill").style.width = progress + "%";
+        document.getElementById("progressText").innerText =
+            progress.toFixed(2) + "% progress to " + nextEvent.name;
+    } else {
+        // Fallback hvis nextEvent mangler eller syklus er null
+        console.log("Progress bar unavailable: nextEvent missing or cycle is zero.");
+        document.getElementById("progressText").innerText = "Klar for neste reduksjon...";
+        document.getElementById("progressFill").style.width = "0%";
+    }
     
     // countdown already running; no need to restart it repeatedly
 }
