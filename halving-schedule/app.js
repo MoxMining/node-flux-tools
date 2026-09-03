@@ -242,7 +242,13 @@ async function init() {
         }
     }
     
-    // Find the previous and next events to calculate progress within current cycle
+    // Debug logging - vis alle events
+    console.log("ALL EVENTS:");
+    for (let event of events) {
+        console.log(" -", event.name, "block:", event.block);
+    }
+    
+    // Find previous and next events
     let previousEvent = events[0];
     let nextEvent = null;
     
@@ -255,7 +261,6 @@ async function init() {
         }
     }
     
-    // Debug logging
     console.log("previousEvent:", previousEvent.name, "block:", previousEvent.block);
     console.log("nextEvent:", nextEvent ? nextEvent.name : "null", "block:", nextEvent ? nextEvent.block : "null");
     
@@ -272,7 +277,6 @@ async function init() {
         document.getElementById("progressText").innerText =
             progress.toFixed(2) + "% progress to " + nextEvent.name;
     } else {
-        // Fallback hvis nextEvent mangler eller syklus er null
         console.log("Progress bar unavailable: nextEvent missing or cycle is zero.");
         document.getElementById("progressText").innerText = "Klar for neste reduksjon...";
         document.getElementById("progressFill").style.width = "0%";
