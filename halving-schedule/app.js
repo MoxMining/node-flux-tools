@@ -208,17 +208,26 @@ async function init() {
         let extraInfo = "";
         if (event.name === "PA Depletion Calculation") {
             const paInfo = event.paInfo;
-            extraInfo = `
-                <tr style="background: #1a1a2e; color: #a0a0a0; font-size: 0.9em;">
-                    <td colspan="4" style="padding: 15px; border: none; text-align: left;">
-                        <strong>PA Supply Calculation Details:</strong><br>
-                        PA per chain (ved blokk 2,020,000): ${PA_PER_CHAIN.toFixed(6)} FLUX × ${NUM_PA_CHAINS} chains = <strong>${TOTAL_PA_SUPPLY.toFixed(6)} FLUX</strong><br>
-                        Periode 1 (2,020,000 → 3,071,200): ${paInfo.period1Blocks.toLocaleString()} blokker × ${PA_RATE_PERIOD_1} PA/block = <strong>${paInfo.period1PAUsed.toFixed(6)} FLUX</strong><br>
-                        Gjenværende etter periode 1: <strong>${paInfo.remainingAfterPeriod1.toFixed(6)} FLUX</strong><br>
-                        Periode 2 (3,071,201 → depletion): ${paInfo.period2Blocks.toLocaleString()} blokker × ${PA_RATE_PERIOD_2} PA/block = <strong>${paInfo.period2PAUsed.toFixed(6)} FLUX</strong><br>
-                        <strong>PA depletion block: ${paInfo.depletionBlock.toLocaleString()}</strong>
-                    </td>
-                </tr>`;
+            if (paInfo) {
+                extraInfo = `
+                    <tr style="background: #1a1a2e; color: #a0a0a0; font-size: 0.9em;">
+                        <td colspan="4" style="padding: 15px; border: none; text-align: left;">
+                            <strong>PA Supply Calculation Details:</strong><br>
+                            PA per chain (ved blokk 2,020,000): ${PA_PER_CHAIN.toFixed(6)} FLUX × ${NUM_PA_CHAINS} chains = <strong>${TOTAL_PA_SUPPLY.toFixed(6)} FLUX</strong><br>
+                            Periode 1 (2,020,000 → 3,071,200): ${paInfo.period1Blocks.toLocaleString()} blokker × ${PA_RATE_PERIOD_1} PA/block = <strong>${paInfo.period1PAUsed.toFixed(6)} FLUX</strong><br>
+                            Gjenværende etter periode 1: <strong>${paInfo.remainingAfterPeriod1.toFixed(6)} FLUX</strong><br>
+                            Periode 2 (3,071,201 → depletion): ${paInfo.period2Blocks.toLocaleString()} blokker × ${PA_RATE_PERIOD_2} PA/block = <strong>${paInfo.period2PAUsed.toFixed(6)} FLUX</strong><br>
+                            <strong>PA depletion block: ${paInfo.depletionBlock.toLocaleString()}</strong>
+                        </td>
+                    </tr>`;
+            } else {
+                extraInfo = `
+                    <tr style="background: #1a1a2e; color: #a0a0a0; font-size: 0.9em;">
+                        <td colspan="4" style="padding: 15px; border: none; text-align: left;">
+                            <strong>PA Supply Calculation: paInfo not available</strong>
+                        </td>
+                    </tr>`;
+            }
             row.innerHTML = "";
         } else if (event.block === -1) {
             // Skip dette eventet i tabellen
