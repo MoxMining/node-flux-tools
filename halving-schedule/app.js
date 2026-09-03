@@ -207,6 +207,7 @@ async function init() {
         // Spesialhåndtering for PA Depletion Calculation
         let extraInfo = "";
         if (event.name === "PA Depletion Calculation") {
+            const paInfo = event.paInfo;
             extraInfo = `
                 <tr style="background: #1a1a2e; color: #a0a0a0; font-size: 0.9em;">
                     <td colspan="4" style="padding: 15px; border: none; text-align: left;">
