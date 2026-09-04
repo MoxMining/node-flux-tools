@@ -7,14 +7,14 @@ const PA_PER_CHAIN = 2449214.05009;      // Remaining per PA chain (whitepaper)
 const NUM_PA_CHAINS = 10;                // Antall PA chains
 const TOTAL_PA_SUPPLY = PA_PER_CHAIN * NUM_PA_CHAINS;  // 24 492 140,5009 PA totalt
 
-const PA_RATE_PERIOD_1 = 14.0;           // PA per block (første 10% reduksjon)
-const PA_RATE_PERIOD_2 = 12.6;           // PA per block (andre 10% reduksjon)
+const PA_RATE_PERIOD_1 = 14.0;           // PA per block (first 10% reduction)
+const PA_RATE_PERIOD_2 = 12.6;           // PA per block (second 10% reduction)
 
-// --- Halvingskonstanter ---
-const THIRD_START = 2020000;             // Blokk 2,020,000 — PoUW v.2 starter
-const FOURTH_HALVING = 3071200;          // Blokk 3,071,200 — første 10% reduksjon av base
-const PA_DEPLETION = 3824802;           // PA depletion etter beregning med 10 chains
-const HALVING_INTERVAL = 1051200;        // 1 år med 30-sekunders blokker
+// --- Halving constants ---
+const THIRD_START = 2020000;             // Block 2,020,000 — PoUW v.2 start
+const FOURTH_HALVING = 3071200;          // Block 3,071,200 — first 10% reduction of base
+const PA_DEPLETION = 3824802;           // PA depletion after calculation with 10 chains
+const HALVING_INTERVAL = 1051200;        // 1 year with 30-second blocks
 const INITIAL_REWARD = 14;               // 14 Flux base per block
 
 let nextReductionTime = null;
@@ -51,33 +51,33 @@ function calculateCurrentReward(currentHeight) {
         halvingBlock += HALVING_INTERVAL;
     }
     
-    // PA aktive så lenge vi er før PA_DEPLETION
+    // PA active as long as we are before PA_DEPLETION
     const paActive = currentHeight < PA_DEPLETION;
     
-    // Total reward = base + PA (dersom PA er aktiv)
-    // Når PA er aktiv: total = base * 2 (base + PA)
-    // Når PA er tom: total = base
+    // Total reward = base + PA (if PA is active)
+    // When PA is active: total = base * 2 (base + PA)
+    // When PA is empty: total = base
     return paActive ? baseReward * 2 : baseReward;
 }
 
-// Beregn PA depletion blokk basert på total PA supply og forbruksrate
+// Calculate PA depletion block based on total PA supply and consumption rate
 function calculatePADepletionBlock() {
-    // Periode 1: blokk 2,020,000 → 3,071,200 (1,051,200 blokker)
-    // PA forbrukt: 1,051,200 × 14 = 14,716,800 PA
+    // Period 1: block 2,020,000 → 3,071,200 (1,051,200 blocks)
+    // PA used: 1,051,200 × 14 = 14,716,800 PA
     const period1Blocks = FOURTH_HALVING - THIRD_START;  // 1,051,200
     const period1PAUsed = period1Blocks * PA_RATE_PERIOD_1;  // 14,716,800
     
-    // Gjenværende PA etter periode 1
+    // Remaining PA after period 1
     const remainingAfterPeriod1 = TOTAL_PA_SUPPLY - period1PAUsed;  // 6,975,340.5009
     
-    // Periode 2: Fortsetter med samme rate inntil PA er tomt
-    // Antall blokker til PA er tomt: remainingAfterPeriod1 / PA_RATE_PERIOD_2
+    // Period 2: Continues at same rate until PA is empty
+    // Number of blocks until PA is empty: remainingAfterPeriod1 / PA_RATE_PERIOD_2
     const blocksUntilDepletion = Math.floor(remainingAfterPeriod1 / PA_RATE_PERIOD_2);
     const depletionBlock = THIRD_START + period1Blocks + blocksUntilDepletion;
     
     return {
         depletionBlock,
-        period1Blocks,           // LEGG TIL: Dette mangler i return!
+        period1Blocks,           // ADDED: This was missing in return!
         remainingAfterPeriod1,
         period1PAUsed,
         period2Blocks: blocksUntilDepletion,
@@ -107,7 +107,7 @@ function generateSchedule(currentHeight) {
         
         const paActive = halvingBlock < PA_DEPLETION;
         
-        // PA-remaining ved dette punktet
+        // PA remaining at this point
         let paRemaining = TOTAL_PA_SUPPLY;
         if (halvingBlock <= FOURTH_HALVING) {
             paRemaining = TOTAL_PA_SUPPLY - (halvingBlock - THIRD_START) * PA_RATE_PERIOD_1;
@@ -117,7 +117,7 @@ function generateSchedule(currentHeight) {
             paRemaining = 0;
         }
         
-        // 10% reduksjons-event
+        // 10% reduction event
         events.push({
             name: halving + "th Reduction (−10%)",
             block: halvingBlock,
@@ -126,7 +126,7 @@ function generateSchedule(currentHeight) {
             paRemaining: Math.max(0, paRemaining)
         });
         
-        // PA depletion event (dersom halvingBlock er nær depletion)
+        // PA depletion event (if halvingBlock is near depletion)
         if (halvingBlock < PA_DEPLETION &&
             PA_DEPLETION < halvingBlock + HALVING_INTERVAL) {
             events.push({
@@ -143,7 +143,7 @@ function generateSchedule(currentHeight) {
     
     events.sort((a, b) => a.block - b.block);
     
-    // Legg til informasjon om PA depletion beregning
+    // Add information about PA depletion calculation
     events.push({
         name: "PA Depletion Calculation",
         block: -1,
@@ -205,7 +205,7 @@ async function init() {
                 ? formatDate(estimateDate(currentHeight, event.block))
                 : "Already Passed";
         
-        // Spesialhåndtering for PA Depletion Calculation
+        // Special handling for PA Depletion Calculation
         let extraInfo = "";
         if (event.name === "PA Depletion Calculation") {
             const paInfo = event.paInfo;
@@ -214,10 +214,10 @@ async function init() {
                     <tr style="background: #1a1a2e; color: #a0a0a0; font-size: 0.9em;">
                         <td colspan="4" style="padding: 15px; border: none; text-align: left;">
                             <strong>PA Supply Calculation Details:</strong><br>
-                            PA per chain (ved blokk 2,020,000): ${PA_PER_CHAIN.toFixed(6)} FLUX × ${NUM_PA_CHAINS} chains = <strong>${TOTAL_PA_SUPPLY.toFixed(6)} FLUX</strong><br>
-                            Periode 1 (2,020,000 → 3,071,200): ${paInfo.period1Blocks.toLocaleString()} blokker × ${PA_RATE_PERIOD_1} PA/block = <strong>${paInfo.period1PAUsed.toFixed(6)} FLUX</strong><br>
-                            Gjenværende etter periode 1: <strong>${paInfo.remainingAfterPeriod1.toFixed(6)} FLUX</strong><br>
-                            Periode 2 (3,071,201 → depletion): ${paInfo.period2Blocks.toLocaleString()} blokker × ${PA_RATE_PERIOD_2} PA/block = <strong>${paInfo.period2PAUsed.toFixed(6)} FLUX</strong><br>
+                            PA per chain (at block 2,020,000): ${PA_PER_CHAIN.toFixed(6)} FLUX × ${NUM_PA_CHAINS} chains = <strong>${TOTAL_PA_SUPPLY.toFixed(6)} FLUX</strong><br>
+                            Period 1 (2,020,000 → 3,071,200): ${paInfo.period1Blocks.toLocaleString()} blocks × ${PA_RATE_PERIOD_1} PA/block = <strong>${paInfo.period1PAUsed.toFixed(6)} FLUX</strong><br>
+                            Remaining after period 1: <strong>${paInfo.remainingAfterPeriod1.toFixed(6)} FLUX</strong><br>
+                            Period 2 (3,071,201 → depletion): ${paInfo.period2Blocks.toLocaleString()} blocks × ${PA_RATE_PERIOD_2} PA/block = <strong>${paInfo.period2PAUsed.toFixed(6)} FLUX</strong><br>
                             <strong>PA depletion block: ${paInfo.depletionBlock.toLocaleString()}</strong>
                         </td>
                     </tr>`;
@@ -231,7 +231,7 @@ async function init() {
             }
             row.innerHTML = "";
         } else if (event.block === -1) {
-            // Skip dette eventet i tabellen
+            // Skip this event in the table
             continue;
         } else {
             row.innerHTML = `
@@ -246,13 +246,13 @@ async function init() {
             table.appendChild(row);
         }
         
-        // Legg til extra info for PA depletion calculation
+        // Add extra info for PA depletion calculation
         if (event.name === "PA Depletion Calculation") {
             table.insertAdjacentHTML('beforeend', extraInfo);
         }
     }
     
-    // Debug logging - vis alle events
+    // Debug logging - show all events
     console.log("ALL EVENTS:");
     for (let event of events) {
         console.log(" -", event.name, "block:", event.block);
@@ -288,7 +288,7 @@ async function init() {
             progress.toFixed(2) + "% progress to " + nextEvent.name;
     } else {
         console.log("Progress bar unavailable: nextEvent missing or cycle is zero.");
-        document.getElementById("progressText").innerText = "Klar for neste reduksjon...";
+        document.getElementById("progressText").innerText = "Ready for next reduction...";
         document.getElementById("progressFill").style.width = "0%";
     }
     
