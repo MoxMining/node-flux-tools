@@ -26,7 +26,7 @@ async function fetchCurrentHeight() {
 }
 
 function formatDate(date) {
-    return date.toLocaleString(undefined, {
+    return date.toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
         day: '2-digit',
