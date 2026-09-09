@@ -1,24 +1,14 @@
 {
-  "name": "flux-tools",
+  "name": "node-flux-tools",
   "version": "1.0.0",
-  "description": "Flux Node Dashboard and Potato Block Countdown",
+  "description": "FLUX node tools - halving schedule and node monitor",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "npm install && node server.js",
+    "dev": "node server.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MoxMining/node-flux-tools.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/MoxMining/node-flux-tools/issues"
-  },
-  "homepage": "https://github.com/MoxMining/node-flux-tools#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^3.0.0"
   }
 }
