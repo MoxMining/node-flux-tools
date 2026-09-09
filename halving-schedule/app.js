@@ -3,27 +3,19 @@ const API_URL = "https://explorer.runonflux.io/api/status";
 const BLOCK_TIME_SECONDS = 30;
 
 // --- Pa-supplys konstanter ---
-const PA_PER_CHAIN = 2449214.05009;      // Remaining per PA chain (whitepaper)
-const NUM_PA_CHAINS = 10;                // Antall PA chains
-const TOTAL_PA_SUPPLY = PA_PER_CHAIN * NUM_PA_CHAINS;  // 24 492 140,5009 PA totalt
+const PA_PER_CHAIN = 2449214.05009;
+const NUM_PA_CHAINS = 10;
+const TOTAL_PA_SUPPLY = PA_PER_CHAIN * NUM_PA_CHAINS;
 
-const PA_RATE_PERIOD_1 = 14.0;           // PA per block (first 10% reduction)
-const PA_RATE_PERIOD_2 = 12.6;           // PA per block (second 10% reduction)
+const PA_RATE_PERIOD_1 = 14.0;
+const PA_RATE_PERIOD_2 = 12.6;
 
 // --- Halving constants ---
-const THIRD_START = 2020000;             // Block 2,020,000 — PoUW v.2 start
-const FOURTH_HALVING = 3071200;          // Block 3,071,200 — first 10% reduction of base
-const PA_DEPLETION = 3824802;           // PA depletion after calculation with 10 chains
-const HALVING_INTERVAL = 1051200;        // 1 year with 30-second blocks
-const INITIAL_REWARD = 14;               // 14 Flux base per block
-
-let nextReductionTime = null;
-
-async function fetchCurrentHeight() {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    return data.info.blocks;
-}
+const THIRD_START = 2020000;
+const FOURTH_HALVING = 3071200;
+const PA_DEPLETION = 3787502;  // THE CUT — erstatter 3824802
+const HALVING_INTERVAL = 1051200;
+const INITIAL_REWARD = 14;
 
 function formatDate(date) {
     return date.toLocaleString('en-US', {
@@ -32,7 +24,6 @@ function formatDate(date) {
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
         timeZoneName: 'short'
     });
 }
@@ -51,229 +42,146 @@ function calculateCurrentReward(currentHeight) {
         halvingBlock += HALVING_INTERVAL;
     }
     
-    // PA active as long as we are before PA_DEPLETION
     const paActive = currentHeight < PA_DEPLETION;
-    
-    // Total reward = base + PA (if PA is active)
-    // When PA is active: total = base * 2 (base + PA)
-    // When PA is empty: total = base
     return paActive ? baseReward * 2 : baseReward;
-}
-
-// Calculate PA depletion block based on total PA supply and consumption rate
-function calculatePADepletionBlock() {
-    // Period 1: block 2,020,000 → 3,071,200 (1,051,200 blocks)
-    // PA used: 1,051,200 × 14 = 14,716,800 PA
-    const period1Blocks = FOURTH_HALVING - THIRD_START;  // 1,051,200
-    const period1PAUsed = period1Blocks * PA_RATE_PERIOD_1;  // 14,716,800
-    
-    // Remaining PA after period 1
-    const remainingAfterPeriod1 = TOTAL_PA_SUPPLY - period1PAUsed;  // 6,975,340.5009
-    
-    // Period 2: Continues at same rate until PA is empty
-    // Number of blocks until PA is empty: remainingAfterPeriod1 / PA_RATE_PERIOD_2
-    const blocksUntilDepletion = Math.floor(remainingAfterPeriod1 / PA_RATE_PERIOD_2);
-    const depletionBlock = THIRD_START + period1Blocks + blocksUntilDepletion;
-    
-    return {
-        depletionBlock,
-        period1Blocks,           // ADDED: This was missing in return!
-        remainingAfterPeriod1,
-        period1PAUsed,
-        period2Blocks: blocksUntilDepletion,
-        period2PAUsed: blocksUntilDepletion * PA_RATE_PERIOD_2
-    };
 }
 
 function generateSchedule(currentHeight) {
     const events = [];
     let baseReward = INITIAL_REWARD;
-    let halvingBlock = FOURTH_HALVING;
     
-    // PA depletion info
-    const paInfo = calculatePADepletionBlock();
-    
-    // Start event (PoUW v.2)
+    // 1. PoUW v.2 Start
     events.push({
-        name: "3rd Period Start (PoUW v.2)",
+        name: "PoUW v.2 Start",
         block: THIRD_START,
-        reward: baseReward * 2,  // Base + PA = 28 FLUX
+        reward: baseReward * 2,
         baseOnly: false,
         paRemaining: TOTAL_PA_SUPPLY
     });
     
-    for (let halving = 4; halving <= 12; halving++) {
+    // 2. Application spec v9 enforced (INGEN endring)
+    events.push({
+        name: "Application spec v9 enforced",
+        block: 3050000,
+        reward: baseReward * 2,
+        baseOnly: false,
+        paRemaining: TOTAL_PA_SUPPLY - (3050000 - THIRD_START) * PA_RATE_PERIOD_1
+    });
+    
+    // 3. 1st Proof-of-Node reduction (−10%)
+    baseReward *= 0.9;
+    events.push({
+        name: "1st Proof-of-Node reduction (−10%)",
+        block: FOURTH_HALVING,
+        reward: baseReward * 2,
+        baseOnly: false,
+        paRemaining: TOTAL_PA_SUPPLY - (FOURTH_HALVING - THIRD_START) * PA_RATE_PERIOD_1
+    });
+    
+    // 4. Retiring chains go one-directional (INGEN endring)
+    events.push({
+        name: "Retiring chains go one-directional",
+        block: 3450000,
+        reward: baseReward * 2,
+        baseOnly: false,
+        paRemaining: TOTAL_PA_SUPPLY - (3450000 - THIRD_START) * PA_RATE_PERIOD_1
+    });
+    
+    // 5. Shielded pools retired (INGEN endring)
+    events.push({
+        name: "Shielded pools retired",
+        block: 3600000,
+        reward: baseReward * 2,
+        baseOnly: false,
+        paRemaining: TOTAL_PA_SUPPLY - (3600000 - THIRD_START) * PA_RATE_PERIOD_1
+    });
+    
+    // 6. The cut — one chain, revenue-funded nodes (ERSTETER PA DEPLETION)
+    baseReward *= 0.9;
+    events.push({
+        name: "The cut — one chain, revenue-funded nodes",
+        block: 3787502,
+        reward: baseReward,
+        baseOnly: true,
+        paRemaining: 0
+    });
+    
+    // 7. Retiring chains shut down (INGEN endring)
+    events.push({
+        name: "Retiring chains shut down",
+        block: 3880000,
+        reward: baseReward,
+        baseOnly: true,
+        paRemaining: 0
+    });
+    
+    // Gjenværende halveringer (2nd, 3rd, 4th ... 8th)
+    let nextBlock = 4122400;
+    for (let i = 2; i <= 8; i++) {
         baseReward *= 0.9;
-        
-        const paActive = halvingBlock < PA_DEPLETION;
-        
-        // PA remaining at this point
-        let paRemaining = TOTAL_PA_SUPPLY;
-        if (halvingBlock <= FOURTH_HALVING) {
-            paRemaining = TOTAL_PA_SUPPLY - (halvingBlock - THIRD_START) * PA_RATE_PERIOD_1;
-        } else if (halvingBlock <= PA_DEPLETION) {
-            paRemaining = paInfo.remainingAfterPeriod1 - (halvingBlock - FOURTH_HALVING) * PA_RATE_PERIOD_2;
-        } else {
-            paRemaining = 0;
-        }
-        
-        // 10% reduction event
         events.push({
-            name: halving + "th Reduction (−10%)",
-            block: halvingBlock,
-            reward: paActive ? baseReward * 2 : baseReward,
-            baseOnly: !paActive,
-            paRemaining: Math.max(0, paRemaining)
+            name: i + "th Proof-of-Node reduction (−10%)",
+            block: nextBlock,
+            reward: baseReward,
+            baseOnly: true,
+            paRemaining: 0
         });
-        
-        // PA depletion event (if halvingBlock is near depletion)
-        if (halvingBlock < PA_DEPLETION &&
-            PA_DEPLETION < halvingBlock + HALVING_INTERVAL) {
-            events.push({
-                name: "PA Depletion (PA ends)",
-                block: PA_DEPLETION,
-                reward: baseReward,
-                baseOnly: true,
-                paRemaining: 0
-            });
-        }
-        
-        halvingBlock += HALVING_INTERVAL;
+        nextBlock += HALVING_INTERVAL;
     }
     
     events.sort((a, b) => a.block - b.block);
-    
-    // Add information about PA depletion calculation
-    events.push({
-        name: "PA Depletion Calculation",
-        block: -1,
-        reward: 0,
-        baseOnly: false,
-        paRemaining: 0,
-        paInfo
-    });
-    
     return events;
 }
 
-function startCountdown() {
-    setInterval(() => {
-        if (!nextReductionTime) return;
-        
-        const diff = nextReductionTime - new Date();
-        if (diff <= 0) return;
-        
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((diff / (1000 * 60)) % 60);
-        const seconds = Math.floor((diff / 1000) % 60);
-        
-        document.getElementById("countdown").innerText =
-            `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    }, 1000);
-}
-
-async function init() {
-    const currentHeight = await fetchCurrentHeight();
+async function updateSchedule() {
+    const currentHeight = await fetch(API_URL)
+        .then(r => r.json())
+        .then(data => data.info.blocks);
     
-    document.getElementById("currentHeight").innerText =
-        currentHeight.toLocaleString();
+    document.getElementById("currentHeight").innerText = currentHeight.toLocaleString();
     
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    document.getElementById("timezoneInfo").innerText =
-        "All dates shown in your timezone: " + tz;
+    document.getElementById("timezoneInfo").innerText = "All dates shown in your timezone: " + tz;
     
     const currentReward = calculateCurrentReward(currentHeight);
-    document.getElementById("currentReward").innerText =
-        currentReward.toFixed(6) + " FLUX";
+    document.getElementById("currentReward").innerText = currentReward.toFixed(6) + " FLUX";
     
     const events = generateSchedule(currentHeight);
     const table = document.getElementById("scheduleTable");
     table.innerHTML = "";
     
-    nextReductionTime = null; // reset before filling
+    let nextReductionTime = null;
+    let previousEvent = events[0];
+    let nextEvent = null;
     
     for (let event of events) {
-        if (event.block > currentHeight && !nextReductionTime && event.block !== -1) {
+        if (event.block > currentHeight && !nextReductionTime) {
             nextReductionTime = estimateDate(currentHeight, event.block);
         }
         
         const row = document.createElement("tr");
         
-        const dateDisplay =
-            event.block > currentHeight
-                ? formatDate(estimateDate(currentHeight, event.block))
-                : "Already Passed";
+        const dateDisplay = event.block > currentHeight
+            ? formatDate(estimateDate(currentHeight, event.block))
+            : "Already Passed";
         
-        // Special handling for PA Depletion Calculation
-        let extraInfo = "";
-        if (event.name === "PA Depletion Calculation") {
-            const paInfo = event.paInfo;
-            if (paInfo) {
-                extraInfo = `
-                    <tr style="background: #1a1a2e; color: #a0a0a0; font-size: 0.9em;">
-                        <td colspan="4" style="padding: 15px; border: none; text-align: left;">
-                            <strong>PA Supply Calculation Details:</strong><br>
-                            PA per chain (at block 2,020,000): ${PA_PER_CHAIN.toFixed(6)} FLUX × ${NUM_PA_CHAINS} chains = <strong>${TOTAL_PA_SUPPLY.toFixed(6)} FLUX</strong><br>
-                            Period 1 (2,020,000 → 3,071,200): ${paInfo.period1Blocks.toLocaleString()} blocks × ${PA_RATE_PERIOD_1} PA/block = <strong>${paInfo.period1PAUsed.toFixed(6)} FLUX</strong><br>
-                            Remaining after period 1: <strong>${paInfo.remainingAfterPeriod1.toFixed(6)} FLUX</strong><br>
-                            Period 2 (3,071,201 → depletion): ${paInfo.period2Blocks.toLocaleString()} blocks × ${PA_RATE_PERIOD_2} PA/block = <strong>${paInfo.period2PAUsed.toFixed(6)} FLUX</strong><br>
-                            <strong>PA depletion block: ${paInfo.depletionBlock.toLocaleString()}</strong>
-                        </td>
-                    </tr>`;
-            } else {
-                extraInfo = `
-                    <tr style="background: #1a1a2e; color: #a0a0a0; font-size: 0.9em;">
-                        <td colspan="4" style="padding: 15px; border: none; text-align: left;">
-                            <strong>PA Supply Calculation: paInfo not available</strong>
-                        </td>
-                    </tr>`;
-            }
-            row.innerHTML = "";
-        } else if (event.block === -1) {
-            // Skip this event in the table
-            continue;
-        } else {
-            row.innerHTML = `
-                <td>${event.name}</td>
-                <td>${event.block.toLocaleString()}</td>
-                <td>${dateDisplay}</td>
-                <td>${event.reward.toFixed(6)} FLUX</td>
-            `;
-        }
+        row.innerHTML = `
+            <td>${event.name}</td>
+            <td>${event.block.toLocaleString()}</td>
+            <td>${dateDisplay}</td>
+            <td>${event.reward.toFixed(6)} FLUX</td>
+        `;
         
-        if (event.name !== "PA Depletion Calculation") {
-            table.appendChild(row);
-        }
+        table.appendChild(row);
         
-        // Add extra info for PA depletion calculation
-        if (event.name === "PA Depletion Calculation") {
-            table.insertAdjacentHTML('beforeend', extraInfo);
-        }
-    }
-    
-    // Debug logging - show all events
-    console.log("ALL EVENTS:");
-    for (let event of events) {
-        console.log(" -", event.name, "block:", event.block);
-    }
-    
-    // Find previous and next events
-    let previousEvent = events[0];
-    let nextEvent = null;
-    
-    for (let event of events) {
-        if (event.block <= currentHeight && event.block !== -1) {
+        if (event.block <= currentHeight) {
             previousEvent = event;
-        } else if (event.block > currentHeight && !nextEvent && event.block !== -1) {
+        } else if (!nextEvent) {
             nextEvent = event;
-            break;
         }
     }
     
-    console.log("previousEvent:", previousEvent.name, "block:", previousEvent.block);
-    console.log("nextEvent:", nextEvent ? nextEvent.name : "null", "block:", nextEvent ? nextEvent.block : "null");
-    
+    // Progress bar
     if (nextEvent && nextEvent.block !== previousEvent.block) {
         const cycleStart = previousEvent.block;
         const cycleEnd = nextEvent.block;
@@ -281,23 +189,22 @@ async function init() {
         const blocksPassed = currentHeight - cycleStart;
         const progress = Math.min((blocksPassed / blocksInCycle) * 100, 100);
         
-        console.log("Progress calculation:", progress.toFixed(2), "% (blocks passed:", blocksPassed, "/ blocks in cycle:", blocksInCycle + ")");
-        
         document.getElementById("progressFill").style.width = progress + "%";
         document.getElementById("progressText").innerText =
             progress.toFixed(2) + "% progress to " + nextEvent.name;
-    } else {
-        console.log("Progress bar unavailable: nextEvent missing or cycle is zero.");
-        document.getElementById("progressText").innerText = "Ready for next reduction...";
-        document.getElementById("progressFill").style.width = "0%";
     }
     
-    // countdown already running; no need to restart it repeatedly
+    // Countdown
+    if (nextReductionTime) {
+        const diff = nextReductionTime - new Date();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        document.getElementById("countdown").innerText =
+            `${days} days, ${hours}h ${minutes}m`;
+    }
 }
 
-// initial load
-init();
-startCountdown();
-
-// refresh data every minute without reloading page
-setInterval(init, 60000);
+// Initial load and refresh every 60 seconds
+updateSchedule();
+setInterval(updateSchedule, 60000);

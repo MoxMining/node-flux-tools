@@ -1,51 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nb">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FLUX Reduction Schedule</title>
-    <script defer src="https://cloud.umami.is/script.js" data-website-id="c3041ae4-2754-4359-8ea8-7c3c521e72de"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="container">
+        <h1>FLUX Reduction Schedule</h1>
 
-<div class="container">
-
-    <h1>FLUX Reduction Schedule</h1>
-
-    <div class="card">
-        <p id="timezoneInfo"></p>
-        <p>Current Block: <span id="currentHeight">Loading...</span></p>
-        <p>Current Reward: <span id="currentReward">-</span></p>
-        <p>Next Reduction In:</p>
-        <h2 id="countdown">Loading...</h2>
-    </div>
-
-  
-    <div class="card">
-        <h2>Reduction Progress</h2>
-        <div class="progress-bar">
-            <div id="progressFill"></div>
+        <div class="card">
+            <p id="timezoneInfo"></p>
+            <p>Current Block: <span id="currentHeight">Loading...</span></p>
+            <p>Current Reward: <span id="currentReward">Loading...</span></p>
+            <p>Next Reduction In:</p>
+            <h2 id="countdown">Loading...</h2>
         </div>
-        <p id="progressText"></p>
+
+        <div class="card">
+            <h2>Reduction Progress</h2>
+            <div class="progress-bar">
+                <div id="progressFill"></div>
+            </div>
+            <p id="progressText"></p>
+        </div>
+
+        <div class="card">
+            <h2>Reduction Schedule</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Block</th>
+                        <th>Estimated Date</th>
+                        <th>Reward After</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleTable"></tbody>
+            </table>
+        </div>
+
     </div>
 
-    <div class="card">
-        <h2>Reduction Schedule</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Event</th>
-                    <th>Block</th>
-                    <th>Estimated Date</th>
-                    <th>Reward After</th>
-                </tr>
-            </thead>
-            <tbody id="scheduleTable"></tbody>
-        </table>
-    </div>
-
-</div>
-
-<script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
