@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLUX Node Checker</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{background:#0f172a;color:#fff;font-family:Arial,sans-serif;margin:0;padding:40px 16px}
+main{max-width:1050px;margin:auto}h1{color:#22c55e;text-align:center}a{color:#22c55e}
+.intro{text-align:center;color:#cbd5e1}.panel{background:#1e293b;border-radius:12px;padding:25px;margin:22px 0}
+form{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+input{padding:13px 15px;background:#0f172a;border:1px solid #64748b;border-radius:8px;color:white;font-size:16px;min-width:240px;flex:1}
+button{padding:13px 22px;background:#22c55e;border:0;border-radius:8px;color:#052e16;font-size:16px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}.message{text-align:center;color:#cbd5e1;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.node{background:#1e293b;border-radius:12px;padding:20px;border:1px solid #334155}
+.node h2{margin:0 0 14px;font-size:19px;display:flex;justify-content:space-between;align-items:center}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.chip{border-radius:8px;padding:10px;font-size:13px;font-weight:bold;display:flex;justify-content:space-between;gap:6px;align-items:center}
+.ok{background:#14532d;color:#bbf7d0}.bad{background:#7f1d1d;color:#fecaca}.warn{background:#713f12;color:#fef08a}
+.offline{color:#fca5a5}.tip{border-left:4px solid #f59e0b;padding:10px 14px;background:#422006;border-radius:4px;line-height:1.5}
+.small{font-size:13px;color:#94a3b8}#results:empty{display:none}
+</style>
+</head>
+<body>
+<main>
+<p><a href="../index.html">← Back to FLUX Tools</a></p>
+<h1>FLUX Node Checker</h1>
+<p class="intro">Enter a public node IP to check the FLUX health endpoint on all eight API ports.</p>
+<section class="panel">
+<form id="form">
+<input id="ip" aria-label="Node IP address" placeholder="e.g. 45.152.50.54" inputmode="decimal" required pattern="(?:[0-9]{1,3}\.){3}[0-9]{1,3}" title="Enter an IPv4 address">
+<button id="submit" type="submit">Check nodes</button>
+</form>
+<p id="message" class="message" role="status" aria-live="polite">Ports: 16127 · 16137 · 16147 · 16157 · 16167 · 16177 · 16187 · 16197</p>
+</section>
+<div id="results" class="grid"></div>
+<section id="udpHelp" class="panel" hidden>
+<h2>⚠ UDP connectivity issue</h2>
+<p class="tip">One or more nodes report UDP as degraded. Ensure both TCP and UDP are forwarded and allowed through your router and firewall. Check provider firewalls, double NAT and VPN/tunnel forwarding. After fixing, it can take about an hour for health status to update.</p>
+</section>
+<p class="small">A failed request can mean the port is closed, the service is unavailable, or the request timed out. It does not prove that the node itself is down.</p>
+</main>
+<script>
+const keys=["db","syncthing","docker","daemon","udp","hardware","dos","appsDos"];
+const form=document.getElementById("form"), output=document.getElementById("results");
+const message=document.getElementById("message"), button=document.getElementById("submit");
+const udpHelp=document.getElementById("udpHelp");
+function el(tag,cls,text){const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node}
+form.addEventListener("submit",async e=>{
+ e.preventDefault();output.replaceChildren();udpHelp.hidden=true;
+ button.disabled=true;message.textContent="Checking all eight ports…";
+ try{
+  const ip=document.getElementById("ip").value.trim();
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
+  let response;
+  try{response=await fetch("/api/node-check?ip="+encodeURIComponent(ip),{signal:controller.signal})}finally{clearTimeout(timer)}
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"Request failed");
+  let degraded=false,reachable=0;
+  for(const item of data.results){
+   const card=el("article","node"),heading=el("h2");
+   heading.append(el("span",null,"Port "+item.port));
+   if(item.error){heading.append(el("span","offline","Unavailable"));card.append(heading,el("p","offline",item.error));}
+   else{
+    reachable++;
+    const values=Object.values(item.checks);
+    const healthy=item.status==="success"&&values.every(v=>v==="ok");
+    heading.append(el("span",healthy?"ok":"warn",healthy?"Healthy":"Needs attention"));
+    card.append(heading);
+    const chips=el("div","chips");
+    for(const key of keys){
+     const value=item.checks[key]||"unknown";
+     if(key==="udp"&&value!=="ok")degraded=true;
+     const chip=el("div","chip "+(value==="ok"?"ok":value==="degraded"?"warn":"bad"));
+     chip.append(el("span",null,key),el("span",null,value.toUpperCase()));chips.append(chip);
+    }
+    card.append(chips);
+   }
+   output.append(card);
+  }
+  message.textContent=reachable+" of 8 ports returned a health response.";
+  udpHelp.hidden=!degraded;
+ }catch(err){message.textContent=err.name==="AbortError"?"Check timed out. Please try again.":err.message}
+ finally{button.disabled=false}
+});
+</script>
+</body>
+</html>
