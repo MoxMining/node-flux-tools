@@ -4,6 +4,9 @@ const { createProxyMiddleware } = require("http-proxy-middleware")
 const app = express()
 const PORT = process.env.PORT || 3000
 
+// Node health checks must be registered before the generic API proxy.
+require("./node-checker")(app)
+
 // API-proksi for /api/*
 app.use("/api", createProxyMiddleware({
   target: "https://api.runonflux.io",
